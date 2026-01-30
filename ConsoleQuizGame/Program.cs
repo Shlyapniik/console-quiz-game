@@ -2,39 +2,7 @@
 using System.Text;
 
 
-List<QuizQuestion> questions = new List<QuizQuestion>
-{
-    new QuizQuestion
-    {
-        Text = "The capital of Great Britain?\n",
-        Answers = new[] { "Berlin", "Moscow", "Paris", "London" },
-        RightAnswerNumber = 4
-    },
-    new QuizQuestion
-    {
-        Text = "2+2",
-        Answers = new[] { "22", "4", "6", "2" },
-        RightAnswerNumber = 2
-    },
-    new QuizQuestion
-    {
-        Text = "3+2",
-        Answers = new[] { "22", "4", "6", "2" },
-        RightAnswerNumber = 2
-    },
-    new QuizQuestion
-    {
-        Text = "4+2",
-        Answers = new[] { "22", "4", "6", "2" },
-        RightAnswerNumber = 2
-    },
-    new QuizQuestion
-    {
-        Text = "5+2",
-        Answers = new[] { "22", "4", "6", "2" },
-        RightAnswerNumber = 2
-    },
-};
+List<QuizQuestion> questions = new List<QuizQuestion>();
 
 int lastRightAnswers = 0;
 int lastTotalQuestions = 0;
@@ -82,6 +50,27 @@ void ShowMenu()
 
 void StartQuiz()
 {
+    Console.WriteLine("Choose difficulty:\n"+
+        "1. Easy\n"+
+        "2. Medium\n"+
+        "3. Hard\n");
+    int difficultyLevel = int.Parse(Console.ReadLine());
+
+    string filePath = difficultyLevel switch
+    {
+        1 => "questions_easy.txt",
+        2 => "questions_medium.txt",
+        3 => "questions_hard.txt",
+        _ => ""
+    };
+    questions = LoadQuestionsFromFile(filePath);
+
+    if (questions.Count == 0)
+    {
+        Console.WriteLine("No questions loaded!");
+        return;
+    }
+
     Shuffle(questions);
     int questionNumber = 1;
     int rightAnswers = 0;
@@ -178,6 +167,41 @@ void SaveResultToFile(int right, int total)
     string line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | Score: {right}/{total}";
     File.AppendAllText(filePath, line+Environment.NewLine);
 }
+
+List<QuizQuestion> LoadQuestionsFromFile(string filePath)
+{
+    List<QuizQuestion> questions = new List<QuizQuestion>();
+
+    if (!File.Exists(filePath))
+    {
+        Console.WriteLine($"File not found: {filePath}");
+        return questions;
+    }
+
+    string[] lines = File.ReadAllLines(filePath);
+
+    foreach (string line in lines)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+            continue;
+
+        string[] parts = line.Split('|');
+
+        string text = parts[0];
+        string[] answers = parts[1].Split(';');
+        int rightAnswer = int.Parse(parts[2]);
+
+        questions.Add(new QuizQuestion
+        {
+            Text = text,
+            Answers = answers,
+            RightAnswerNumber = rightAnswer
+        });
+    }
+
+    return questions;
+}
+
 
 int? ReadAnswerWithCountdown(int seconds)
 {
